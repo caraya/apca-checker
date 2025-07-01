@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APCA Contrast Checker with Local Font Access</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/opentype.js/dist/opentype.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/oklch-to-rgb/dist/oklch-to-rgb.umd.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Custom styles for color input */
+    input[type="color"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 6rem;
+      height: 6rem;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border-radius: 0.75rem;
+      border: 4px solid #4A5568;
+    }
+
+    input[type="color"]::-moz-color-swatch {
+      border-radius: 0.75rem;
+      border: 4px solid #4A5568;
+    }
+
+    /* Ensure selects are styled consistently */
+    select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+      padding-right: 2.5rem;
+    }
+
+    /* Remove default marker from summary */
+    summary {
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-900 text-white antialiased">
+
+  <div class="container mx-auto p-4 md:p-8">
+    <header class="text-center mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold text-cyan-400">APCA Contrast Checker</h1>
+      <p class="text-gray-400 mt-2">Now with Local Font Access for more accurate results.</p>
+    </header>
+
+    <main class="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 max-w-5xl mx-auto">
+
+      <div id="preview"
+        class="relative rounded-xl p-8 md:p-12 mb-8 transition-colors duration-300 flex flex-col items-center justify-center text-center min-h-[300px]">
+        <div class="absolute top-4 right-4 text-sm bg-black bg-opacity-20 px-2 py-1 rounded-md">
+          <span id="contrastValue" class="font-bold text-2xl">Lc 0.0</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl items-center">
+          <div class="flex flex-col items-center">
+            <label for="textColor" class="text-lg font-bold mb-3">Text Color</label>
+            <input type="color" id="textColor" value="#FFFFFF">
+            <input type="text" id="textColorHex" class="mt-3 w-48 bg-gray-700 text-center rounded-md p-2 font-mono"
+              value="#FFFFFF">
+          </div>
+
+          <div class="flex justify-center">
+            <button id="swapColorsBtn" class="p-4 bg-gray-700 hover:bg-cyan-600 rounded-full transition-colors"
+              aria-label="Swap text and background colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex flex-col items-center">
+            <label for="bgColor" class="text-lg font-bold mb-3">Background Color</label>
+            <input type="color" id="bgColor" value="#000000">
+            <input type="text" id="bgColorHex" class="mt-3 w-48 bg-gray-700 text-center rounded-md p-2 font-mono"
+              value="#000000">
+          </div>
+        </div>
+
+        <div id="previewText" class="mt-8">
+          <h2 class="text-4xl font-bold" style="font-weight: 700;">Sample Heading</h2>
+          <p class="mt-2 text-lg" style="font-weight: 400;">This is a paragraph of sample text to demonstrate the
+            contrast.</p>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-gray-700 p-4 rounded-lg">
+          <label for="fontSize" class="block mb-2 font-semibold text-gray-300">Font Size (px)</label>
+          <input type="number" id="fontSize" value="24" class="w-full bg-gray-800 rounded p-2">
+        </div>
+        <div class="bg-gray-700 p-4 rounded-lg">
+          <label for="fontWeight" class="block mb-2 font-semibold text-gray-300">Font Weight</label>
+          <select id="fontWeight" class="w-full bg-gray-800 rounded p-2">
+            <option value="100">100 (Thin)</option>
+            <option value="200">200 (Extra Light)</option>
+            <option value="300">300 (Light)</option>
+            <option value="400" selected>400 (Regular)</option>
+            <option value="500">500 (Medium)</option>
+            <option value="600">600 (Semi Bold)</option>
+            <option value="700">700 (Bold)</option>
+            <option value="800">800 (Extra Bold)</option>
+            <option value="900">900 (Black)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-gray-700 p-4 rounded-lg mb-8">
+        <label for="fontSelector" class="block mb-2 font-semibold text-gray-300">Local Font</label>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button id="loadFontsBtn"
+            class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Load Local
+            Fonts</button>
+          <select id="fontSelector" class="w-full bg-gray-800 rounded p-2 disabled:opacity-50" disabled>
+            <option value="">-- Select a Font --</option>
+          </select>
+        </div>
+        <p id="fontStatus" class="text-sm text-gray-400 mt-2"></p>
+      </div>
+
+
+      <div id="results" class="text-center">
+        <h3 class="text-2xl font-bold mb-4 text-cyan-300">Compliance Levels</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div id="bronzeResult" class="p-6 rounded-lg transition-all duration-300">
+            <h4 class="text-xl font-bold">Bronze Level</h4>
+            <p class="text-lg mt-2">Non-text content</p>
+            <div class="mt-4 text-3xl font-black" id="bronzeStatus">---</div>
+          </div>
+          <div id="silverResult" class="p-6 rounded-lg transition-all duration-300">
+            <h4 class="text-xl font-bold">Silver Level</h4>
+            <p class="text-lg mt-2">Fluent text</p>
+            <div class="mt-4 text-3xl font-black" id="silverStatus">---</div>
+          </div>
+          <div id="goldResult" class="p-6 rounded-lg transition-all duration-300">
+            <h4 class="text-xl font-bold">Gold Level</h4>
+            <p class="text-lg mt-2">Critical text</p>
+            <div class="mt-4 text-3xl font-black" id="goldStatus">---</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-12 pt-8 border-t border-gray-700 space-y-4">
+        <details class="bg-gray-700 rounded-lg group">
+          <summary class="flex justify-between items-center cursor-pointer p-4 font-bold text-lg text-cyan-300">
+            <span>What's Covered by the Bronze Level?</span>
+            <span class="transition-transform duration-300 group-open:rotate-180">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </summary>
+          <div class="prose prose-invert max-w-none text-gray-300 p-4 border-t border-gray-600">
+            <p>Bronze is the minimum level, focusing on making primary content distinguishable. It does not require font
+              lookup tables.</p>
+            <ul class="list-disc list-inside">
+              <li><strong>Lc 75 Minimum:</strong> For body text. (Lc 90 is preferred).</li>
+              <li><strong>Lc 60 Minimum:</strong> For other content text you want people to read.</li>
+              <li><strong>Lc 45 Minimum:</strong> For large, heavy text like headlines.</li>
+              <li><strong>Lc 30 Minimum:</strong> The absolute minimum for any discernible text, such as disabled or
+                placeholder text.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="bg-gray-700 rounded-lg group">
+          <summary class="flex justify-between items-center cursor-pointer p-4 font-bold text-lg text-cyan-300">
+            <span>What's Covered by the Silver Level?</span>
+            <span class="transition-transform duration-300 group-open:rotate-180">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </summary>
+          <div class="prose prose-invert max-w-none text-gray-300 p-4 border-t border-gray-600">
+            <p>Silver is the recommended target for fluent reading and covers all text content, using lookup tables for
+              accuracy.</p>
+            <ul class="list-disc list-inside">
+              <li><strong>All Text Content:</strong> The goal of Silver is to cover all text, including body, fluent,
+                and sub-fluent (e.g., bylines, secondary nav).</li>
+              <li><strong>Uses Lookup Tables:</strong> Required Lc value is determined by the font size and weight. See
+                the official <a href="https://www.readtech.org/ARC/tests/visual-readability-contrast/" target="_blank"
+                  rel="noopener" class="text-cyan-400 hover:underline">APCA Lookup Tables</a>.</li>
+              <li><strong>Minimum Font Size:</strong> Recommends a minimum of 13px for content text.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="bg-gray-700 rounded-lg group">
+          <summary class="flex justify-between items-center cursor-pointer p-4 font-bold text-lg text-cyan-300">
+            <span>What's Covered by the Gold Level?</span>
+            <span class="transition-transform duration-300 group-open:rotate-180">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </span>
+          </summary>
+          <div class="prose prose-invert max-w-none text-gray-300 p-4 border-t border-gray-600">
+            <p>Gold is the highest level for specialized use cases where readability is critical, adding stricter
+              requirements.</p>
+            <ul class="list-disc list-inside">
+              <li><strong>Higher Lc Values:</strong> Requires higher contrast values than Silver for the same font size
+                and weight, based on the same <a href="https://www.readtech.org/ARC/tests/visual-readability-contrast/"
+                  target="_blank" rel="noopener" class="text-cyan-400 hover:underline">lookup tables</a>.</li>
+              <li><strong>Minimum Font Size:</strong> Recommends a minimum of 18px for content text.</li>
+              <li><strong>Required Test - Font Qualification:</strong> For Gold conformance, fonts used for content must
+                be compared to a reference font (like Helvetica) to ensure their weight and x-height are equivalent,
+                ensuring a consistent and highly readable presentation. This is what the "Local Font" feature helps to
+                assess.</li>
+            </ul>
+          </div>
+        </details>
+        <p class="text-center text-gray-400 pt-4">
+          For detailed information, visit the <a href="https://apcacontrast.com/" target="_blank" rel="noopener"
+            class="text-cyan-400 hover:underline">official APCA website</a>.
+        </p>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    /**
+     * @file This script powers an APCA (Accessible Perceptual Contrast Algorithm)
+     * contrast checker. It calculates the contrast between a text and background color
+     * and determines if it meets Bronze, Silver, and Gold accessibility compliance levels.
+     * It now includes the Local Font Access API to provide more accurate results
+     * based on the metrics of a user-selected local font.
+     */
+
+    // APCA Constants
+    const sRGBtrc = 2.4;         // sRGB transfer-function (gamma) for converting sRGB to linear values.
+    const Rco = 0.2126729;       // Red color channel coefficient for luminance calculation.
+    const Gco = 0.7151522;       // Green color channel coefficient (human eye is most sensitive to green).
+    const Bco = 0.0721750;       // Blue color channel coefficient.
+    const normBG = 0.55;         // Exponent for normal polarity (dark text on light bg) background.
+    const normTXT = 0.58;        // Exponent for normal polarity text.
+    const revBG = 0.57;          // Exponent for reverse polarity (light text on dark bg) background.
+    const revTXT = 0.56;         // Exponent for reverse polarity text.
+    const blkThrs = 0.03;        // Threshold for handling "black crush" where dark colors are hard to distinguish.
+    const blkClmp = 1.45;        // Clamp for adjusting values near the black threshold.
+    const scaleBoW = 1.25;       // Final scaling factor for black text on white background.
+    const scaleWoB = 1.25;       // Final scaling factor for white text on black background.
+    const deltaYmin = 0.0005;    // Minimum difference in luminance to avoid errors with identical colors.
+    const REFERENCE_X_HEIGHT = 0.52; // Normalized x-height of a reference font (Helvetica) for comparison.
+
+    // DOM Element References
+    const textColorInput = document.getElementById('textColor');
+    const bgColorInput = document.getElementById('bgColor');
+    const textColorHex = document.getElementById('textColorHex');
+    const bgColorHex = document.getElementById('bgColorHex');
+    const swapColorsBtn = document.getElementById('swapColorsBtn');
+    const preview = document.getElementById('preview');
+    const previewText = document.getElementById('previewText');
+    const contrastValueEl = document.getElementById('contrastValue');
+    const fontSizeInput = document.getElementById('fontSize');
+    const fontWeightSelect = document.getElementById('fontWeight');
+    const bronzeResultEl = document.getElementById('bronzeResult');
+    const silverResultEl = document.getElementById('silverResult');
+    const goldResultEl = document.getElementById('goldResult');
+    const bronzeStatusEl = document.getElementById('bronzeStatus');
+    const silverStatusEl = document.getElementById('silverStatus');
+    const goldStatusEl = document.getElementById('goldStatus');
+    const loadFontsBtn = document.getElementById('loadFontsBtn');
+    const fontSelector = document.getElementById('fontSelector');
+    const fontStatus = document.getElementById('fontStatus');
+
+    // Global state for font data
+    let localFonts = [];
+    let currentFontMetrics = null;
+
+    /**
+     * Main function to orchestrate updates. Reads the state from the inputs
+     * and updates the preview and compliance results.
+     */
+    function update() {
+      const textColor = textColorInput.value;
+      const bgColor = bgColorInput.value;
+      const fontSize = parseFloat(fontSizeInput.value) || 0;
+      const fontWeight = parseInt(fontWeightSelect.value, 10) || 400;
+
+      preview.style.backgroundColor = bgColor;
+      preview.style.color = textColor;
+
+      const h2 = previewText.querySelector('h2');
+      const p = previewText.querySelector('p');
+      h2.style.fontSize = `${fontSize * 1.5}px`;
+      h2.style.fontWeight = fontWeight;
+      p.style.fontSize = `${fontSize}px`;
+      p.style.fontWeight = fontWeight;
+
+      const textRGB = hexToRgb(textColor);
+      const bgRGB = hexToRgb(bgColor);
+
+      if (!textRGB || !bgRGB) {
+        // If colors are invalid, don't calculate contrast, but still check compliance
+        // This allows font size/weight changes to update results even with invalid color text
+        checkCompliance(0, fontSize, fontWeight);
+        return;
+      }
+
+      const textY = sRGBtoY(textRGB);
+      const bgY = sRGBtoY(bgRGB);
+      const contrast = calculateAPCA(textY, bgY);
+      const absContrast = Math.abs(contrast);
+      contrastValueEl.textContent = `Lc ${contrast.toFixed(1)}`;
+
+      checkCompliance(absContrast, fontSize, fontWeight);
+    }
+
+    /**
+     * Converts a HEX color string to an RGB array.
+     * @param {string} hex - The hex color string (e.g., "#RRGGBB").
+     * @returns {number[]|null} An array of [R, G, B] values (0-255) or null if invalid.
+     */
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? [ parseInt(result[ 1 ], 16), parseInt(result[ 2 ], 16), parseInt(result[ 3 ], 16) ] : null;
+    }
+
+    /**
+     * Converts an sRGB color to its linear luminance (Y).
+     * @param {number[]} rgb - An array of [R, G, B] values (0-255).
+     * @returns {number} The calculated luminance (Y) value.
+     */
+    function sRGBtoY(rgb) {
+      const r = rgb[ 0 ] / 255.0, g = rgb[ 1 ] / 255.0, b = rgb[ 2 ] / 255.0;
+      const rL = r <= 0.03928 ? r / 12.92 : Math.pow((r + 0.055) / 1.055, sRGBtrc);
+      const gL = g <= 0.03928 ? g / 12.92 : Math.pow((g + 0.055) / 1.055, sRGBtrc);
+      const bL = b <= 0.03928 ? b / 12.92 : Math.pow((b + 0.055) / 1.055, sRGBtrc);
+      return (rL * Rco) + (gL * Gco) + (bL * Bco);
+    }
+
+    /**
+     * Calculates the APCA contrast value (Lc).
+     * @param {number} textY - The luminance of the text color.
+     * @param {number} bgY - The luminance of the background color.
+     * @returns {number} The calculated Lc (Lightness contrast) value.
+     */
+    function calculateAPCA(textY, bgY) {
+      let SAPC = 0.0, output = 0.0;
+      let isWhiteOnBlack = textY > bgY;
+      let num = isWhiteOnBlack ? Math.pow(textY, normTXT) - Math.pow(bgY, normBG) : Math.pow(bgY, revBG) - Math.pow(textY, revTXT);
+      if (Math.abs(num) < deltaYmin) return 0.0;
+      if (num > blkThrs) SAPC = num - blkThrs;
+      else if (num < -blkThrs) SAPC = num + blkThrs;
+      else SAPC = num * blkClmp;
+      output = SAPC * 100 * (isWhiteOnBlack ? scaleWoB : scaleBoW);
+      return output;
+    }
+
+    /** @type {Array<[number, number]>} */
+    const bronzeLookup = [ [ 12, 90 ], [ 14, 75 ], [ 18, 60 ], [ 24, 50 ], [ 36, 40 ], [ 48, 35 ], [ 72, 30 ] ];
+    /** @type {Array<[number, number]>} */
+    const silverLookup = [ [ 12, 100 ], [ 14, 90 ], [ 18, 75 ], [ 24, 60 ], [ 36, 50 ], [ 48, 40 ], [ 72, 35 ] ];
+    /** @type {Array<[number, number]>} */
+    const goldLookup = [ [ 12, 115 ], [ 14, 105 ], [ 18, 90 ], [ 24, 75 ], [ 36, 65 ], [ 48, 55 ], [ 72, 50 ] ];
+
+    /**
+     * Gets the required Lc value, adjusted for font metrics if available.
+     * @param {number} size - The font size in pixels.
+     * @param {number} weight - The font weight.
+     * @param {Array<[number, number]>} lookupTable - The compliance lookup table.
+     * @returns {number} The required Lc value.
+     */
+    function getRequiredLc(size, weight, lookupTable) {
+      let adjSize = size;
+      if (weight < 400) adjSize *= 0.8;
+      if (weight > 500) adjSize *= 1.2;
+
+      // Adjust effective font size based on the selected font's x-height
+      if (currentFontMetrics && currentFontMetrics.xHeight) {
+        const xHeightRatio = currentFontMetrics.xHeight / REFERENCE_X_HEIGHT;
+        adjSize *= xHeightRatio;
+      }
+
+      let lower = lookupTable[ 0 ], upper = lookupTable[ lookupTable.length - 1 ];
+      if (adjSize <= lower[ 0 ]) return lower[ 1 ];
+      if (adjSize >= upper[ 0 ]) return upper[ 1 ];
+
+      for (let i = 0; i < lookupTable.length - 1; i++) {
+        if (adjSize >= lookupTable[ i ][ 0 ] && adjSize < lookupTable[ i + 1 ][ 0 ]) {
+          const sizeRange = lookupTable[ i + 1 ][ 0 ] - lookupTable[ i ][ 0 ];
+          const lcRange = lookupTable[ i + 1 ][ 1 ] - lookupTable[ i ][ 1 ];
+          const sizeRatio = (adjSize - lookupTable[ i ][ 0 ]) / sizeRange;
+          return lookupTable[ i ][ 1 ] + (sizeRatio * lcRange);
+        }
+      }
+      return upper[ 1 ];
+    }
+
+    /**
+     * Checks the calculated contrast against compliance levels and updates the UI.
+     * @param {number} absContrast - The absolute Lc value.
+     * @param {number} fontSize - The font size in pixels.
+     * @param {number} fontWeight - The font weight.
+     */
+    function checkCompliance(absContrast, fontSize, fontWeight) {
+      const requiredBronze = getRequiredLc(fontSize, fontWeight, bronzeLookup);
+      const requiredSilver = getRequiredLc(fontSize, fontWeight, silverLookup);
+      const requiredGold = getRequiredLc(fontSize, fontWeight, goldLookup);
+
+      const updateResult = (el, statusEl, pass) => {
+        el.className = `p-6 rounded-lg ${pass ? 'bg-green-800 text-green-100' : 'bg-red-800 text-red-100'}`;
+        statusEl.textContent = pass ? 'PASS' : 'FAIL';
+      };
+
+      updateResult(bronzeResultEl, bronzeStatusEl, absContrast >= requiredBronze);
+      updateResult(silverResultEl, silverStatusEl, absContrast >= requiredSilver);
+      updateResult(goldResultEl, goldStatusEl, absContrast >= requiredGold);
+    }
+
+    /**
+     * Loads available local fonts using the Local Font Access API.
+     */
+    async function loadLocalFonts() {
+      if (!('queryLocalFonts' in window)) {
+        fontStatus.textContent = 'Local Font Access API not supported in this browser.';
+        return;
+      }
+      fontStatus.textContent = 'Loading fonts... Permission may be required.';
+      try {
+        localFonts = await window.queryLocalFonts();
+        const uniqueFonts = [ ...new Map(localFonts.map(font => [ font.fullName, font ])).values() ];
+
+        fontSelector.innerHTML = '<option value="">-- Select a Font --</option>'; // Clear previous
+        uniqueFonts.sort((a, b) => a.fullName.localeCompare(b.fullName)).forEach(font => {
+          const option = document.createElement('option');
+          option.value = font.postscriptName;
+          option.textContent = font.fullName;
+          fontSelector.appendChild(option);
+        });
+        fontSelector.disabled = false;
+        fontStatus.textContent = `${uniqueFonts.length} fonts loaded. Select one to apply.`;
+      } catch (err) {
+        fontStatus.textContent = `Error loading fonts: ${err.message}`;
+        console.error(err);
+      }
+    }
+
+    /**
+     * Applies the selected font and recalculates contrast.
+     * @param {string} postscriptName - The PostScript name of the font to apply.
+     */
+    async function applyFont(postscriptName) {
+      if (!postscriptName) {
+        previewText.style.fontFamily = ''; // Reset to default
+        currentFontMetrics = null;
+        update();
+        return;
+      }
+      const fontData = localFonts.find(f => f.postscriptName === postscriptName);
+      if (!fontData) return;
+
+      fontStatus.textContent = `Analyzing ${fontData.fullName}...`;
+      try {
+        const fontBlob = await fontData.blob();
+        const arrayBuffer = await fontBlob.arrayBuffer();
+        const font = opentype.parse(arrayBuffer);
+
+        // Create and apply the @font-face rule
+        const fontFace = new FontFace(font.names.fontFamily.en, arrayBuffer);
+        document.fonts.add(fontFace);
+        await fontFace.load();
+
+        // Apply the font family to the preview text
+        previewText.style.fontFamily = `"${font.names.fontFamily.en}"`;
+
+        // Store font metrics for compliance calculation
+        const unitsPerEm = font.unitsPerEm;
+        const xHeight = font.tables.os2.sxHeight;
+        currentFontMetrics = {
+          xHeight: xHeight / unitsPerEm, // Normalize x-height
+        };
+
+        fontStatus.textContent = `Applied ${fontData.fullName}. x-height: ${currentFontMetrics.xHeight.toFixed(3)}`;
+        update(); // Recalculate with new font metrics
+
+      } catch (err) {
+        fontStatus.textContent = `Error applying font: ${err.message}`;
+        console.error(err);
+      }
+    }
+
+    /**
+     * Converts an RGB color value to a HEX string.
+     * @param {number} r - Red value.
+     * @param {number} g - Green value.
+     * @param {number} b - Blue value.
+     * @returns {string} The hex color string.
+     */
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    }
+
+    /**
+     * Formats a hex string to a full 6-digit hex code with a leading hash.
+     * Expands 3-digit shorthand hex.
+     * @param {string} hex - The hex string to format.
+     * @returns {string} The formatted 6-digit hex string.
+     */
+    function formatHex(hex) {
+      // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      hex = hex.replace(shorthandRegex, (m, r, g, b) => {
+        return r + r + g + g + b + b;
+      });
+
+      return `#${hex.replace('#', '')}`;
+    }
+
+    /**
+     * Parses a color string from a text input.
+     * @param {string} value - The input string.
+     * @returns {string|null} A valid 6-digit hex color or null.
+     */
+    function parseColorInput(value) {
+      value = value.trim();
+      if (value.toLowerCase().startsWith('oklch')) {
+        try {
+          const [ r, g, b ] = oklch.oklchToRgb(value);
+          return rgbToHex(r, g, b);
+        } catch (error) {
+          return null;
+        }
+      } else if (/^#?([a-f\d]{3}|[a-f\d]{6})$/i.test(value)) {
+        return formatHex(value);
+      }
+      return null;
+    }
+
+    // Event Listeners
+    fontSizeInput.addEventListener('input', update);
+    fontWeightSelect.addEventListener('change', update);
+
+    textColorInput.addEventListener('input', () => {
+      textColorHex.value = textColorInput.value.toUpperCase();
+      update();
+    });
+    bgColorInput.addEventListener('input', () => {
+      bgColorHex.value = bgColorInput.value.toUpperCase();
+      update();
+    });
+
+    textColorHex.addEventListener('input', () => {
+      const hexValue = parseColorInput(textColorHex.value);
+      if (hexValue) {
+        textColorInput.value = hexValue;
+      }
+      update();
+    });
+    bgColorHex.addEventListener('input', () => {
+      const hexValue = parseColorInput(bgColorHex.value);
+      if (hexValue) {
+        bgColorInput.value = hexValue;
+      }
+      update();
+    });
+
+    swapColorsBtn.addEventListener('click', () => {
+      const tempColor = textColorInput.value;
+      const tempHex = textColorHex.value;
+
+      textColorInput.value = bgColorInput.value;
+      textColorHex.value = bgColorHex.value;
+
+      bgColorInput.value = tempColor;
+      bgColorHex.value = tempHex;
+
+      update();
+    });
+
+    loadFontsBtn.addEventListener('click', loadLocalFonts);
+    fontSelector.addEventListener('change', e => applyFont(e.target.value));
+
+    // Initial call
+    document.addEventListener('DOMContentLoaded', update);
+  </script>
+</body>
+
+</html>
