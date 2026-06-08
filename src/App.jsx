@@ -26,6 +26,19 @@ function App() {
     currentFontMetrics
   );
 
+  const isValidColor = (value) => {
+    try {
+      // Attempt parsing to validate any supported CSS color format.
+      new Color(value);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  const textInputValid = isValidColor(textInputValue);
+  const bgInputValid = isValidColor(bgInputValue);
+
   const handleColorInputChange = (value, isText) => {
     // Update the text input field immediately for a responsive feel
     if (isText) {
@@ -36,7 +49,7 @@ function App() {
 
     try {
       const color = new Color(value);
-      
+
       // **THE DEFINITIVE FIX**: Force the output to be a 6-digit hex string.
       const hexValue = color.toString({ format: 'hex' });
 
@@ -54,7 +67,7 @@ function App() {
   const swapColors = () => {
     const newTextColor = bgColor;
     const newBgColor = textColor;
-    
+
     // Swap the canonical colors that drive the display
     setTextColor(newTextColor);
     setBgColor(newBgColor);
@@ -66,9 +79,10 @@ function App() {
 
   return (
     <div className="bg-gray-900 text-white antialiased">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <div className="container mx-auto p-4 md:p-8">
         <Header />
-        <main className="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 max-w-5xl mx-auto">
+        <main id="main-content" className="bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 max-w-5xl mx-auto" tabIndex="-1">
           <Preview
             textColor={textColor}
             bgColor={bgColor}
@@ -80,10 +94,12 @@ function App() {
               textColor={textColor}
               textInputValue={textInputValue}
               onTextInputChange={(value) => handleColorInputChange(value, true)}
-              
+
               bgColor={bgColor}
               bgInputValue={bgInputValue}
               onBgInputChange={(value) => handleColorInputChange(value, false)}
+              textInputValid={textInputValid}
+              bgInputValid={bgInputValid}
 
               swapColors={swapColors}
             />

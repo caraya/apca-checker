@@ -11,7 +11,9 @@ const FontControls = ({ fontSize, setFontSize, fontWeight, setFontWeight }) => (
         id="fontSize"
         value={fontSize}
         onChange={(e) => setFontSize(parseFloat(e.target.value))}
-        className="w-full bg-gray-800 rounded p-2"
+        min="1"
+        step="1"
+        className="w-full bg-gray-800 rounded p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
       />
     </div>
     <div className="bg-gray-700 p-4 rounded-lg">
@@ -22,7 +24,7 @@ const FontControls = ({ fontSize, setFontSize, fontWeight, setFontWeight }) => (
         id="fontWeight"
         value={fontWeight}
         onChange={(e) => setFontWeight(parseInt(e.target.value, 10))}
-        className="w-full bg-gray-800 rounded p-2"
+        className="w-full bg-gray-800 rounded p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
       >
         <option value="100">100 (Thin)</option>
         <option value="200">200 (Extra Light)</option>

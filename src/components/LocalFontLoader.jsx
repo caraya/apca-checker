@@ -75,16 +75,19 @@ const LocalFontLoader = ({ setCurrentFontMetrics }) => {
       </label>
       <div className="flex flex-col sm:flex-row gap-4">
         <button
+          type="button"
           onClick={loadLocalFonts}
-          className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+          className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 min-h-11 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+          aria-describedby="fontStatus"
         >
           Load Local Fonts
         </button>
         <select
           id="fontSelector"
           onChange={(e) => applyFont(e.target.value)}
-          className="w-full bg-gray-800 rounded p-2 disabled:opacity-50"
+          className="w-full bg-gray-800 rounded p-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
           disabled={localFonts.length === 0 || isFontLoading}
+          aria-describedby="fontStatus"
         >
           <option value="">-- Select a Font --</option>
           {localFonts.map((font) => (
@@ -94,7 +97,7 @@ const LocalFontLoader = ({ setCurrentFontMetrics }) => {
           ))}
         </select>
       </div>
-      <p className="text-sm text-gray-400 mt-2" ref={previewTextRef}>
+      <p id="fontStatus" className="text-sm text-gray-300 mt-2" ref={previewTextRef} role="status" aria-live="polite">
         {fontStatus}
       </p>
     </div>
